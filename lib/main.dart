@@ -1,125 +1,230 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'models/track.dart';
+import 'player.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => Player(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Music Player',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MusicPlayerScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class MusicPlayerScreen extends StatefulWidget {
+  const MusicPlayerScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _MusicPlayerScreenState createState() => _MusicPlayerScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
+  @override
+  void initState() {
+    super.initState();
+    final player = Provider.of<Player>(context, listen: false);
+    player.setPlaylist([
+      Track(
+        title: 'Повод',
+        artist: 'Morgenshtern',
+        url: 'https://dl2.mp3party.net/download/11259754',
+        coverUrl:
+            'https://avatars.yandex.net/get-music-content/14369544/52169222.a.35411305-1/100x100',
+      ),
+      Track(
+        title: 'Song 2',
+        artist: 'Artist 2',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+        coverUrl: 'https://placehold.co/150/png',
+      ),
+      Track(
+        title: 'Song 3',
+        artist: 'Artist 3',
+        url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+        coverUrl: 'https://placehold.co/150/png',
+      ),
+    ]);
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final player = Provider.of<Player>(context);
+
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('Music Player'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: player.playlist.length,
+              itemBuilder: (context, index) {
+                final track = player.playlist[index];
+                return ListTile(
+                  leading: Image.network(
+                    track.coverUrl,
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                  ),
+                  title: Text(track.title),
+                  subtitle: Text(track.artist),
+                  tileColor: player.currentTrackIndex == index
+                      ? Colors.deepPurple.withOpacity(0.1)
+                      : null,
+                  onTap: () {
+                    if (player.currentTrackIndex == index) {
+                      // Если трек уже играет, ставим на паузу или воспроизводим
+                      if (player.isPlaying) {
+                        player.pause();
+                      } else {
+                        player.play();
+                      }
+                    } else {
+                      // Иначе воспроизводим выбранный трек
+                      player.playTrack(index);
+                    }
+                  },
+                );
+              },
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Image.network(
+                  player.playlist[player.currentTrackIndex].coverUrl,
+                  width: 200,
+                  height: 200,
+                  fit: BoxFit.cover,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  player.playlist[player.currentTrackIndex].title,
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                Text(
+                  player.playlist[player.currentTrackIndex].artist,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 16),
+                StreamBuilder<Duration>(
+                  stream: player.positionStream,
+                  builder: (context, snapshot) {
+                    final position = snapshot.data ?? Duration.zero;
+                    final totalDuration = player.totalDuration;
+
+                    // Показываем ползунок только если длительность трека больше нуля
+                    if (totalDuration.inSeconds > 0) {
+                      return Column(
+                        children: [
+                          Slider(
+                            value: position.inSeconds.toDouble(),
+                            max: totalDuration.inSeconds.toDouble(),
+                            onChanged: (value) {
+                              player.seek(Duration(seconds: value.toInt()));
+                            },
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _formatDuration(position),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                              Text(
+                                _formatDuration(totalDuration),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    } else {
+                      // Если длительность трека еще не определена, скрываем ползунок
+                      return const SizedBox.shrink();
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.skip_previous),
+                      onPressed: player.previous,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        player.isPlaying ? Icons.pause : Icons.play_arrow,
+                      ),
+                      onPressed: () {
+                        if (player.isPlaying) {
+                          player.pause();
+                        } else {
+                          player.play();
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.skip_next),
+                      onPressed: player.next,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Кнопка для отключения звука и слайдер громкости
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: Icon(
+                        player.isMuted ? Icons.volume_off : Icons.volume_up,
+                      ),
+                      onPressed: player.toggleMute,
+                    ),
+                    SizedBox(
+                      width: 200,
+                      child: Slider(
+                        value: player.volume,
+                        onChanged: (value) {
+                          player.setVolume(value);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes:$seconds';
   }
 }
