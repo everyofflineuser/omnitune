@@ -1,4 +1,5 @@
 # omnitune_flutter
+[![Codemagic build status](https://api.codemagic.io/apps/67a57a287787c05d783b74c4/67a57a287787c05d783b74c3/status_badge.svg)](https://codemagic.io/app/67a57a287787c05d783b74c4/67a57a287787c05d783b74c3/latest_build)
 
 A new Flutter project.
 
